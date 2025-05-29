@@ -1,0 +1,95 @@
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.stage.Stage;
+import java.io.*;
+import java.util.*;
+
+public class TodoListJavaFX extends Application {
+    private static final String FILE_NAME = "todo.text";
+    private ListView<String> listView;
+    private TextField taskField;
+    private ObservableList<String> tasks;
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    @Override
+    public void start(Stage primaryStage) {
+        tasks = javafx.collections.FXCollections.observableArrayList();
+        loadTasks();
+
+        listView = new ListView<>(tasks);
+        taskField = new TextField();
+        taskField.setPromptText("Masukkan tugas baru atau ubah tugas...");
+
+        Button addButton = new Button("Tambah");
+        Button updateButton = new Button("Ubah");
+        Button deleteButton = new Button("Hapus");
+
+        addButton.setOnAction(e -> addTask());
+        updateButton.setOnAction(e -> updateTask());
+        deleteButton.setOnAction(e -> deleteTask());
+
+        HBox buttonBox = new HBox(10, addButton, updateButton, deleteButton);
+        VBox layout = new VBox(10, listView, taskField, buttonBox);
+        layout.setPadding(new javafx.geometry.Insets(10));
+
+        primaryStage.setScene(new Scene(layout, 400, 400));
+        primaryStage.setTitle("Aplikasi To-Do List");
+        primaryStage.show();
+    }
+
+    private void loadTasks() {
+        tasks.clear();
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                tasks.add(line);
+            }
+        } catch (IOException e) {
+            System.out.println("Tidak dapat membaca file: " + FILE_NAME);
+        }
+    }
+
+    private void saveTasks() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
+            for (String task : tasks) {
+                writer.write(task);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("Tidak dapat menyimpan file: " + FILE_NAME);
+        }
+    }
+
+    private void addTask() {
+        String task = taskField.getText().trim();
+        if (!task.isEmpty()) {
+            tasks.add(task);
+            taskField.clear();
+            saveTasks();
+        }
+    }
+
+    private void updateTask() {
+        int selectedIdx = listView.getSelectionModel().getSelectedIndex();
+        String newTask = taskField.getText().trim();
+        if (selectedIdx >= 0 && !newTask.isEmpty()) {
+            tasks.set(selectedIdx, newTask);
+            taskField.clear();
+            saveTasks();
+        }
+    }
+
+    private void deleteTask() {
+        int selectedIdx = listView.getSelectionModel().getSelectedIndex();
+        if (selectedIdx >= 0) {
+            tasks.remove(selectedIdx);
+            taskField.clear();
+            saveTasks();
+        }
+    }
+}
